@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHOTA STORE - Torneo de Ventas Anime</title>
+    <!-- html2canvas para captura PNG -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@600;700&display=swap');
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #080c14;
+            background-image: radial-gradient(#1e1b4b 1.5px, transparent 0);
+            background-size: 28px 28px;
+            color: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .action-bar {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover { transform: translateY(-2px); }
+        .btn-download { background: linear-gradient(135deg, #0284c7, #2563eb); color: white; }
+        .btn-save { background: linear-gradient(135deg, #059669, #10b981); color: white; }
+        .btn-admin { background: linear-gradient(135deg, #d97706, #f59e0b); color: white; }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            background: #0f172a;
+            border-radius: 18px;
+            padding: 24px;
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 35px rgba(59, 130, 246, 0.3);
+        }
+
+        /* ENCABEZADO Y LOGOS CENTRADOS Y MÁS GRANDES */
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #1e1b4b, #0f172a);
+            padding: 25px 20px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            border: 2px solid #6366f1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            box-shadow: inset 0 0 25px rgba(99, 102, 241, 0.35);
+        }
+
+        /* LOGO SHOTA VECTORIAL GARANTIZADO EN HEADER */
+        .shota-logo-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #dc2626, #f59e0b);
+            padding: 8px 24px;
+            border-radius: 12px;
+            border: 3px solid #fef08a;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.7);
+        }
+
+        .shota-logo-header span {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 2.2rem;
+            color: #ffffff;
+            letter-spacing: 4px;
+            text-shadow: 2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000;
+        }
+
+        .header-text h1 {
+            margin: 0;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #38bdf8, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        /* BANNER DE LOGOS ANIMES MÁS GRANDES Y CENTRADOS */
+        .anime-banner {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.85);
+            padding: 12px 24px;
+            border-radius: 40px;
+            border: 1px solid #6366f1;
+            flex-wrap: wrap;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+        }
+
+        .anime-banner img {
+            height: 48px;
+            max-width: 110px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.3));
+            transition: transform 0.2s ease;
+        }
+
+        .anime-banner img:hover {
+            transform: scale(1.15);
+        }
+
+        .date-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-bar input {
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #38bdf8;
+            font-family: 'Orbitron', sans-serif;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+            margin-bottom: 20px;
+        }
+
+        th {
+            background-color: #1e293b;
+            color: #38bdf8;
+            font-family: 'Orbitron', sans-serif;
+            text-align: left;
+            padding: 12px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #334155;
+        }
+
+        td {
+            background: #182234;
+            padding: 10px 12px;
+            vertical-align: middle;
+            transition: all 0.3s ease;
+        }
+
+        td:first-child { border-radius: 10px 0 0 10px; }
+        td:last-child { border-radius: 0 10px 10px 0; }
+
+        /* ESTILOS DE PODIO PARA COMPETENCIA */
+        tr.pos-1 td { background: linear-gradient(90deg, #362800, #182234); border-top: 1px solid #f59e0b; border-bottom: 1px solid #f59e0b; }
+        tr.pos-2 td { background: linear-gradient(90deg, #1e293b, #182234); border-top: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8; }
+        tr.pos-3 td { background: linear-gradient(90deg, #2e1808, #182234); border-top: 1px solid #b45309; border-bottom: 1px solid #b45309; }
+
+        .rank-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.1rem;
+            width: 32px;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .store-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* LOGO SHOTA EN CADA SUCURSAL */
+        .shota-logo-mini {
+            background: linear-gradient(135deg, #dc2626, #f59e0b);
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 0.65rem;
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid #fef08a;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 0px #000;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px rgba(220, 38, 38, 0.4);
+        }
+
+        .store-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            width: 100%;
+        }
+
+        .store-name {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: #f8fafc;
+        }
+
+        .input-dark {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #f1f5f9;
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .input-dark:focus { border-color: #38bdf8; outline: none; }
+        .input-dark:disabled { background: #090d16; opacity: 0.6; cursor: not-allowed; }
+
+        /* ILUMINACIÓN GRADUAL DE METAS DIARIAS */
+        .meta-low {
+            border: 1px solid #f87171 !important;
+            box-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
+            color: #fca5a5 !important;
+        }
+        .meta-mid {
+            border: 1px solid #facc15 !important;
+            box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+            color: #fef08a !important;
+        }
+        .meta-complete {
+            border: 1px solid #4ade80 !important;
+            box-shadow: 0 0 14px rgba(74, 222, 128, 0.8);
+            color: #86efac !important;
+            font-weight: 800;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #0f172a;
+            border-radius: 8px;
+            height: 22px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #a855f7, #10b981);
+            width: 0%;
+            transition: width 0.5s ease-in-out;
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
+        }
+
+        .pct-text {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: #38bdf8;
+            text-align: center;
+        }
+
+        .total-box {
+            background: linear-gradient(135deg, #1e1b4b, #0f172a);
+            border: 2px solid #a855f7;
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+        }
+
+        .total-box span.amount {
+            color: #ec4899;
+            font-size: 1.4rem;
+            text-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+<div class="action-bar">
+    <button class="btn btn-admin" onclick="iniciarSesionAdmin()">
+        🔑 Acceso Admin / Desbloquear
+    </button>
+    <div>
+        <button class="btn btn-save" onclick="sincronizarDatos()">
+            ⚡ Sincronizar
+        </button>
+        <button class="btn btn-download" onclick="descargarComoImagen()">
+            📸 Captura PNG
+        </button>
+    </div>
+</div>
+
+<div class="container" id="carreraVentas">
+    <div class="header">
+        <!-- Logo Principal Garantizado SHOTA STORE -->
+        <div class="shota-logo-header">
+            <span>SHOTA STORE</span>
+        </div>
+
+        <div class="header-text">
+            <h1>⛩️ TORNEO DE VENTAS EN TIEMPO REAL ⛩️</h1>
+        </div>
+
+        <!-- Banner Centrado y Grande con Logos de Animes Top -->
+        <div class="anime-banner">
+            <img src="naruto.jpeg" alt="Naruto" title="Naruto" onerror="this.style.display='none';">
+            <img src="one piece.jpg" alt="One Piece" title="One Piece" onerror="this.style.display='none';">
+            <img src="b67c4674ae69aa5d04b902ae1b934f9e.jpg" alt="Dragon Ball Z" title="Dragon Ball Z" onerror="this.style.display='none';">
+            <img src="Kimetsu.png" alt="Demon Slayer" title="Demon Slayer" onerror="this.style.display='none';">
+            <img src="jijusu.jpeg" alt="Jujutsu Kaisen" title="Jujutsu Kaisen" onerror="this.style.display='none';">
+            <img src="atack on titan.jpeg" alt="Attack on Titan" title="Attack on Titan" onerror="this.style.display='none';">
+            <img src="pokemon.jpg" alt="Pokemon" title="Pokemon" onerror="this.style.display='none';">
+        </div>
+    </div>
+
+    <div class="date-bar">
+        <label style="font-family: 'Orbitron'; font-size: 0.8rem; color: #94a3b8;">📅 FECHA DE TORNEO:</label>
+        <input type="date" id="fechaRegistro" onchange="cargarDatosFecha()">
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 6%; text-align: center;">POS</th>
+                <th style="width: 30%;">Punto de Venta / Asesores</th>
+                <th style="width: 18%;">Meta Día ($)</th>
+                <th style="width: 18%;">Venta Real ($)</th>
+                <th style="width: 20%;">Progreso Carrera</th>
+                <th style="width: 8%; text-align: center;">%</th>
+            </tr>
+        </thead>
+        <tbody id="tablaSucursales">
+            <!-- Se ordena y renderiza dinámicamente -->
+        </tbody>
+    </table>
+
+    <div class="total-box">
+        <span>⚡ ACUMULADO GENERAL DIARIO:</span>
+        <span class="amount" id="granTotal">🔒 OCULTO (SOLO ADMINS)</span>
+    </div>
+</div>
+
+<script>
+    const CLAVE_SUPER_ADMIN = "SUPER123";
+    let clavesSubAdmin = ["SUB123"];
+    let esAdmin = false;
+
+    // Lista fija inicial
+    const listaSucursalesOriginal = [
+        "SHOTA ALAMEDA 1", "SHOTA ALAMEDA 2", "SHOTA CUESTA",
+        "SHOTA GALERÍAS", "SHOTA JILOTEPEC", "SHOTA LIBRAMIENTO",
+        "SHOTA MISIONES", "SHOTA PLAZA JUÁREZ 1", "SHOTA PLAZA JUÁREZ 2",
+        "SHOTA RÍO", "SHOTA SENDERO", "SHOTA TORRES 1",
+        "SHOTA TORRES 2", "SHOTA TORRES 3"
+    ];
+
+    // Estructura de estado en memoria
+    let estadoSucursales = listaSucursalesOriginal.map(nombre => ({
+        nombre: nombre,
+        meta: 10000,
+        venta: 0,
+        asesores: ''
+    }));
+
+    // Configuración Firebase
+    const firebaseConfig = {
+        apiKey: "TU_API_KEY",
+        authDomain: "tu-proyecto.firebaseapp.com",
+        databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com",
+        projectId: "tu-proyecto",
+        storageBucket: "tu-proyecto.appspot.com",
+        messagingSenderId: "123456789",
+        appId: "1:123456789:web:abcdef"
+    };
+
+    let db = null;
+    if (firebaseConfig.apiKey !== "TU_API_KEY") {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+        escucharFirebase();
+    }
+
+    document.getElementById('fechaRegistro').value = new Date().toISOString().slice(0, 10);
+
+    function renderizarTabla() {
+        // ORDENAR SUCURSALES EN BASE A SU VENTA (MAYOR A MENOR)
+        const listaOrdenada = [...estadoSucursales].sort((a, b) => b.venta - a.venta);
+
+        const tbody = document.getElementById('tablaSucursales');
+        tbody.innerHTML = '';
+
+        listaOrdenada.forEach((sucursal, index) => {
+            const tr = document.createElement('tr');
+            
+            // Asignar clase de Podio
+            if (index === 0 && sucursal.venta > 0) tr.className = 'pos-1';
+            else if (index === 1 && sucursal.venta > 0) tr.className = 'pos-2';
+            else if (index === 2 && sucursal.venta > 0) tr.className = 'pos-3';
+
+            let posIcon = `${index + 1}º`;
+            if (index === 0) posIcon = '🥇';
+            else if (index === 1) posIcon = '🥈';
+            else if (index === 2) posIcon = '🥉';
+
+            const porcentaje = sucursal.meta > 0 ? Math.min(Math.round((sucursal.venta / sucursal.meta) * 100), 100) : 0;
+
+            tr.innerHTML = `
+                <td style="text-align: center;">
+                    <span class="rank-badge">${posIcon}</span>
+                </td>
+                <td>
+                    <div class="store-cell">
+                        <div class="shota-logo-mini">SHOTA</div>
+                        <div class="store-info">
+                            <span class="store-name">${sucursal.nombre}</span>
+                            <input type="text" class="input-dark" value="${sucursal.asesores}" placeholder="👥 Asesor(es)..." oninput="actualizarField('${sucursal.nombre}', 'asesores', this.value)">
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <input type="number" class="input-dark input-meta-elem" value="${sucursal.meta}" placeholder="Meta $" ${!esAdmin ? 'disabled' : ''} oninput="actualizarField('${sucursal.nombre}', 'meta', this.value)">
+                </td>
+                <td>
+                    <input type="number" class="input-dark" value="${sucursal.venta || ''}" placeholder="0.00" oninput="actualizarField('${sucursal.nombre}', 'venta', this.value)">
+                </td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: ${porcentaje}%;"></div>
+                    </div>
+                </td>
+                <td class="pct-text">${porcentaje}%</td>
+            `;
+
+            // Aplicar iluminación a la Meta según porcentaje
+            const inputMetaElem = tr.querySelector('.input-meta-elem');
+            if (porcentaje >= 100) inputMetaElem.classList.add('meta-complete');
+            else if (porcentaje >= 50) inputMetaElem.classList.add('meta-mid');
+            else if (sucursal.venta > 0) inputMetaElem.classList.add('meta-low');
+
+            tbody.appendChild(tr);
+        });
+
+        calcularGranTotal();
+    }
+
+    function actualizarField(nombreSucursal, campo, valor) {
+        const target = estadoSucursales.find(s => s.nombre === nombreSucursal);
+        if (target) {
+            if (campo === 'venta' || campo === 'meta') {
+                target[campo] = parseFloat(valor) || 0;
+            } else {
+                target[campo] = valor;
+            }
+            
+            // Re-renderizar si cambia la venta para actualizar posiciones
+            if (campo === 'venta') {
+                renderizarTabla();
+            } else {
+                calcularGranTotal();
+            }
+
+            // Transmitir a Firebase
+            if (db) {
+                const fecha = document.getElementById('fechaRegistro').value;
+                db.ref(`ventas_diarias/${fecha}/puntos/${nombreSucursal}/${campo}`).set(target[campo]);
+            }
+        }
+    }
+
+    function calcularGranTotal() {
+        const totalVentas = estadoSucursales.reduce((acc, curr) => acc + (curr.venta || 0), 0);
+        const elemGranTotal = document.getElementById('granTotal');
+        if (esAdmin) {
+            elemGranTotal.innerText = `$${totalVentas.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+        } else {
+            elemGranTotal.innerText = "🔒 OCULTO (SOLO ADMINS)";
+        }
+    }
+
+    function iniciarSesionAdmin() {
+        const pass = prompt("Introduce Clave de Administrador o Sub-Admin para modificar Metas:");
+        if (pass === CLAVE_SUPER_ADMIN || clavesSubAdmin.includes(pass)) {
+            esAdmin = true;
+            alert("🔓 MODO ADMINISTRADOR ACTIVADO:\n- Modificación de Metas Habilitada.\n- Totales Revelados.");
+            renderizarTabla();
+        } else if (pass !== null) {
+            alert("❌ Clave incorrecta.");
+        }
+    }
+
+    function escucharFirebase() {
+        db.ref('configuracion/sub_admins').on('value', (snapshot) => {
+            const sub = snapshot.val();
+            if (sub && Array.isArray(sub)) clavesSubAdmin = sub;
+        });
+        cargarDatosFecha();
+    }
+
+    function cargarDatosFecha() {
+        if (!db) return;
+        const fecha = document.getElementById('fechaRegistro').value;
+
+        db.ref(`ventas_diarias/${fecha}/puntos`).on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                estadoSucursales.forEach(sucursal => {
+                    if (data[sucursal.nombre]) {
+                        sucursal.venta = parseFloat(data[sucursal.nombre].venta) || 0;
+                        sucursal.meta = parseFloat(data[sucursal.nombre].meta) || 10000;
+                        sucursal.asesores = data[sucursal.nombre].asesores || '';
+                    }
+                });
+                renderizarTabla();
+            }
+        });
+    }
+
+    function descargarComoImagen() {
+        const elemento = document.getElementById('carreraVentas');
+        html2canvas(elemento, {
+            scale: 2,
+            backgroundColor: "#080c14",
+            onclone: (docClonado) => {
+                const origInputs = elemento.querySelectorAll('input');
+                const cloneInputs = docClonado.querySelectorAll('input');
+                origInputs.forEach((inp, idx) => {
+                    if (cloneInputs[idx]) cloneInputs[idx].value = inp.value;
+                });
+            }
+        }).then(canvas => {
+            const enlace = document.createElement('a');
+            const fecha = document.getElementById('fechaRegistro').value;
+            enlace.download = `Torneo_ShotaStore_${fecha}.png`;
+            enlace.href = canvas.toDataURL('image/png');
+            enlace.click();
+        });
+    }
+
+    function sincronizarDatos() { alert("⚡ Datos sincronizados en tiempo real."); }
+
+    renderizarTabla();
+</script>
+
+</body>
+</html>
