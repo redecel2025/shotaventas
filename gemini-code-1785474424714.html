@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrera de Ventas - Puntos de Venta</title>
+    <!-- html2canvas para captura de imagen -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0f172a;
+            color: #1e293b;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .action-bar {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.88rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+
+        .btn-download { background-color: #0284c7; color: white; }
+        .btn-download:hover { background-color: #0369a1; }
+        .btn-save { background-color: #16a34a; color: white; }
+        .btn-save:hover { background-color: #15803d; }
+        .btn-admin { background-color: #f59e0b; color: white; }
+        .btn-admin:hover { background-color: #d97706; }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white;
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-bottom: 4px solid #38bdf8;
+        }
+
+        .header h1 { margin: 0; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .header p { margin: 4px 0 0 0; color: #38bdf8; font-weight: 600; font-size: 0.9rem; }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            background: #f1f5f9;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .field-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #475569;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        input[type="text"], input[type="number"], input[type="date"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #0f172a;
+            background-color: #ffffff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th {
+            background-color: #1e293b;
+            color: #f8fafc;
+            text-align: left;
+            padding: 10px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+
+        .store-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #0f172a;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 8px;
+            height: 18px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            width: 0%;
+            transition: width 0.4s ease;
+            border-radius: 8px;
+        }
+
+        .pct-text {
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #1e293b;
+            text-align: center;
+        }
+
+        .total-box {
+            background: #0f172a;
+            color: white;
+            padding: 16px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .total-box span.amount { color: #38bdf8; font-size: 1.3rem; }
+
+        /* Estilos del Panel Administrador (Modal) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h3 { margin: 0; color: #0f172a; }
+
+        .btn-close {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: #64748b;
+        }
+
+        .admin-list {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .admin-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .btn-del {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .add-box {
+            display: flex;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="action-bar">
+    <button class="btn btn-admin" onclick="abrirAdmin()">
+        ⚙️ Modo Administrador
+    </button>
+    <div>
+        <button class="btn btn-save" onclick="guardarEnFirebase()">
+            ☁️ Guardar Ventas
+        </button>
+        <button class="btn btn-download" onclick="descargarComoImagen()">
+            📸 Descargar Imagen
+        </button>
+    </div>
+</div>
+
+<div class="container" id="carreraVentas">
+    <div class="header">
+        <h1>🏁 CARRERA DE VENTAS DIARIAS</h1>
+        <p>Control de Metas y Avance Operativo</p>
+    </div>
+
+    <div class="controls-grid">
+        <div class="field-group">
+            <label>📅 Fecha:</label>
+            <input type="date" id="fechaRegistro">
+        </div>
+        <div class="field-group">
+            <label>🎯 Meta General por Sucursal ($):</label>
+            <input type="number" id="metaGlobal" value="10000" oninput="calcularTotales()">
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 30%;">Punto de Venta</th>
+                <th style="width: 25%;">Venta Actual ($)</th>
+                <th style="width: 30%;">Avance Carrera</th>
+                <th style="width: 15%; text-align: center;">%</th>
+            </tr>
+        </thead>
+        <tbody id="tablaSucursales">
+            <!-- Puntos de Venta Dinámicos -->
+        </tbody>
+    </table>
+
+    <div class="total-box">
+        <span>TOTAL ACUMULADO DEL DÍA:</span>
+        <span class="amount" id="granTotal">$0.00</span>
+    </div>
+</div>
+
+<!-- MODAL DE ADMINISTRACIÓN -->
+<div class="modal-overlay" id="modalAdmin">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⚙️ Administrar Puntos de Venta</h3>
+            <button class="btn-close" onclick="cerrarAdmin()">✕</button>
+        </div>
+        
+        <p style="font-size: 0.85rem; color: #64748b;">Agrega o elimina sucursales. Los cambios se actualizarán automáticamente para todos los usuarios.</p>
+
+        <div class="admin-list" id="listaAdmin">
+            <!-- Lista configurable -->
+        </div>
+
+        <div class="add-box">
+            <input type="text" id="nuevoPuntoVenta" placeholder="Nombre de nuevo punto de venta...">
+            <button class="btn btn-save" onclick="agregarPuntoVenta()">+ Agregar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // CLAVE DE ADMINISTRADOR (Compártela únicamente con terceros autorizados)
+    const CLAVE_ADMIN = "1234";
+
+    // Puntos de venta por defecto
+    let sucursales = [
+        "RIO 1", "RIO 3", "RIO 5", "RIO 6", 
+        "AMERICAS", "MONUMENTAL", "SAN LORENZO", 
+        "SHOTA RIO", "PAPIS RIO", "TOSKARIO 1", 
+        "TOSKARIO 2", "MIEL RIO", "COCOS"
+    ];
+
+    // Configuración de Firebase Realtime Database
+    const firebaseConfig = {
+        apiKey: "TU_API_KEY",
+        authDomain: "tu-proyecto.firebaseapp.com",
+        databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com",
+        projectId: "tu-proyecto",
+        storageBucket: "tu-proyecto.appspot.com",
+        messagingSenderId: "123456789",
+        appId: "1:123456789:web:abcdef"
+    };
+
+    let db = null;
+    if (firebaseConfig.apiKey !== "TU_API_KEY") {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+        escucharSucursalesFirebase();
+    } else {
+        // Cargar desde localStorage si no está configurado Firebase
+        const locales = localStorage.getItem('sucursales_carrera');
+        if (locales) sucursales = JSON.parse(locales);
+    }
+
+    document.getElementById('fechaRegistro').value = new Date().toISOString().slice(0, 10);
+
+    function cargarTabla() {
+        const tbody = document.getElementById('tablaSucursales');
+        tbody.innerHTML = '';
+
+        sucursales.forEach((sucursal, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><span class="store-name">${sucursal}</span></td>
+                <td>
+                    <input type="number" class="input-venta" data-sucursal="${sucursal}" placeholder="0.00" oninput="calcularTotales()">
+                </td>
+                <td>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="bar-${index}"></div>
+                    </div>
+                </td>
+                <td class="pct-text" id="pct-${index}">0%</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        calcularTotales();
+    }
+
+    function calcularTotales() {
+        const meta = parseFloat(document.getElementById('metaGlobal').value) || 1;
+        const inputs = document.querySelectorAll('.input-venta');
+        let sumaTotal = 0;
+
+        inputs.forEach((input, index) => {
+            const venta = parseFloat(input.value) || 0;
+            sumaTotal += venta;
+
+            let porcentaje = Math.min(Math.round((venta / meta) * 100), 100);
+            
+            const bar = document.getElementById(`bar-${index}`);
+            const pct = document.getElementById(`pct-${index}`);
+            if (bar && pct) {
+                bar.style.width = `${porcentaje}%`;
+                pct.innerText = `${porcentaje}%`;
+            }
+        });
+
+        document.getElementById('granTotal').innerText = `$${sumaTotal.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+    }
+
+    // GESTIÓN DE ADMINISTRADOR
+    function abrirAdmin() {
+        const pass = prompt("Introduce la Clave de Administrador:");
+        if (pass === CLAVE_ADMIN) {
+            document.getElementById('modalAdmin').style.display = 'flex';
+            renderListaAdmin();
+        } else if (pass !== null) {
+            alert("❌ Clave incorrecta. Acceso denegado.");
+        }
+    }
+
+    function cerrarAdmin() {
+        document.getElementById('modalAdmin').style.display = 'none';
+    }
+
+    function renderListaAdmin() {
+        const container = document.getElementById('listaAdmin');
+        container.innerHTML = '';
+
+        sucursales.forEach((sucursal, idx) => {
+            const item = document.createElement('div');
+            item.className = 'admin-item';
+            item.innerHTML = `
+                <span>${sucursal}</span>
+                <button class="btn-del" onclick="eliminarPuntoVenta(${idx})">Eliminar</button>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function agregarPuntoVenta() {
+        const input = document.getElementById('nuevoPuntoVenta');
+        const nombre = input.value.trim().toUpperCase();
+
+        if (nombre && !sucursales.includes(nombre)) {
+            sucursales.push(nombre);
+            input.value = '';
+            sincronizarSucursales();
+        }
+    }
+
+    function eliminarPuntoVenta(index) {
+        if (confirm(`¿Seguro que deseas eliminar "${sucursales[index]}"?`)) {
+            sucursales.splice(index, 1);
+            sincronizarSucursales();
+        }
+    }
+
+    function sincronizarSucursales() {
+        renderListaAdmin();
+        cargarTabla();
+
+        if (db) {
+            db.ref('configuracion/sucursales').set(sucursales);
+        } else {
+            localStorage.setItem('sucursales_carrera', JSON.stringify(sucursales));
+        }
+    }
+
+    function escucharSucursalesFirebase() {
+        db.ref('configuracion/sucursales').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && Array.isArray(data)) {
+                sucursales = data;
+                cargarTabla();
+            }
+        });
+    }
+
+    // DESCARGA DE IMAGEN (PNG)
+    function descargarComoImagen() {
+        const elemento = document.getElementById('carreraVentas');
+        const opciones = {
+            scale: 2,
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: "#ffffff",
+            onclone: (docClonado) => {
+                const origInputs = elemento.querySelectorAll('input');
+                const cloneInputs = docClonado.querySelectorAll('input');
+                origInputs.forEach((inp, idx) => {
+                    if (cloneInputs[idx]) cloneInputs[idx].value = inp.value;
+                });
+            }
+        };
+
+        html2canvas(elemento, opciones).then(canvas => {
+            const enlace = document.createElement('a');
+            const fecha = document.getElementById('fechaRegistro').value;
+            enlace.download = `Carrera_Ventas_${fecha}.png`;
+            enlace.href = canvas.toDataURL('image/png');
+            enlace.click();
+        });
+    }
+
+    // GUARDAR VENTAS EN FIREBASE
+    function guardarEnFirebase() {
+        const fecha = document.getElementById('fechaRegistro').value;
+        if (!fecha) { alert("Selecciona una fecha válida"); return; }
+
+        const datosVentas = {};
+        document.querySelectorAll('.input-venta').forEach((input) => {
+            const nombreSucursal = input.getAttribute('data-sucursal');
+            datosVentas[nombreSucursal] = parseFloat(input.value) || 0;
+        });
+
+        if (db) {
+            db.ref('ventas_diarias/' + fecha).set({
+                meta_individual: parseFloat(document.getElementById('metaGlobal').value) || 0,
+                ventas: datosVentas,
+                actualizado: new Date().toISOString()
+            }).then(() => {
+                alert("✅ Ventas guardadas exitosamente en la Base de Datos");
+            }).catch(err => {
+                alert("❌ Error al guardar: " + err.message);
+            });
+        } else {
+            alert("⚠️ Sin conexión a Firebase: Los puntos de venta se guardaron localmente en el navegador.");
+        }
+    }
+
+    cargarTabla();
+</script>
+
+</body>
+</html>
