@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuadro de Trabajo Río Grande y Dispersos</title>
+    <!-- Librería html2canvas para la descarga en imagen -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #0f172a; 
+            color: #1e293b;
+            margin: 0; 
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Botón de acción destacado */
+        .action-bar {
+            width: 100%;
+            max-width: 850px;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .btn-download {
+            background-color: #0284c7;
+            color: #ffffff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .btn-download:hover {
+            background-color: #0369a1;
+        }
+
+        .btn-download:active {
+            transform: scale(0.98);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white;
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-bottom: 4px solid #38bdf8;
+        }
+
+        .header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.5px; text-transform: uppercase; }
+        .header p { margin: 6px 0 0 0; color: #38bdf8; font-weight: 600; font-size: 0.95rem; }
+
+        .date-picker-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f1f5f9;
+            padding: 10px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            border: 1px solid #e2e8f0;
+        }
+
+        .date-picker-container input {
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            color: #0f172a;
+            font-size: 0.95rem;
+            width: 60%;
+            text-align: right;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+        }
+
+        th {
+            background-color: #1e293b;
+            color: #f8fafc;
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+
+        .store-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .store-logo {
+            height: 38px;
+            width: 65px;
+            object-fit: contain;
+            border-radius: 6px;
+            background-color: #f8fafc;
+            padding: 2px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .logo-placeholder {
+            height: 38px;
+            width: 65px;
+            border-radius: 6px;
+            background-color: #fce7f3;
+            border: 1px solid #f472b6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: #db2777;
+            font-weight: bold;
+        }
+
+        .nombre-sucursal {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        /* Colores distintivos */
+        .color-rio { color: #ea580c; }
+        .color-shota { color: #d97706; }
+        .color-papis { color: #2563eb; }
+        .color-rosa { color: #ec4899; }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #0f172a;
+            box-sizing: border-box;
+            background-color: #f8fafc;
+            transition: all 0.2s;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            background-color: #ffffff;
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Sección de Asesores de Descanso */
+        .off-section {
+            background: #fff7ed;
+            border: 1.5px solid #fdba74;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .off-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #c2410c;
+            margin-bottom: 10px;
+        }
+
+        .off-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+
+        /* Bloque Amplio para Plan de Limpieza */
+        .cleaning-section {
+            background: #f0fdf4;
+            border: 1.5px solid #86efac;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+        }
+
+        .cleaning-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #166534;
+            margin-bottom: 14px;
+        }
+
+        .cleaning-header h3 { margin: 0; font-size: 1.15rem; font-weight: 700; }
+
+        .cleaning-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .cleaning-item label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: bold;
+            color: #15803d;
+            margin-bottom: 4px;
+        }
+
+        textarea.cleaning-instructions {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            font-weight: 500;
+            color: #0f172a;
+            background-color: #ffffff;
+            resize: vertical;
+            box-sizing: border-box;
+            line-height: 1.4;
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="action-bar">
+    <button class="btn-download" onclick="descargarComoImagen()">
+        📸 Descargar Cuadro en Imagen (PNG)
+    </button>
+</div>
+
+<div class="container" id="cuadroTrabajo">
+    <div class="header">
+        <h1>CUADRO DE TRABAJO RÍO GRANDE Y DISPERSOS</h1>
+        <p>Asignación de Personal y Plan Operativo Diario</p>
+    </div>
+
+    <div class="date-picker-container">
+        <span>📅 Fecha / Día:</span>
+        <input type="text" id="fechaDia" value="Hoy">
+    </div>
+
+    <!-- SECCIÓN ASESORES QUE DESCANSAN -->
+    <div class="off-section">
+        <div class="off-header">
+            <h3>🏖️ ASESORES EN DESCANSO</h3>
+        </div>
+        <input type="text" id="asesoresDescanso" placeholder="Escribe aquí los nombres de los asesores que descansan hoy...">
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 45%;">Punto de Venta</th>
+                <th style="width: 55%;">Asesor(es) Asignado(s)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 1. RIO 1 -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img src="CK contorno blanco.png" class="store-logo" alt="Rio 1" onerror="this.onerror=null; this.src='CK contorno blanco.jpg'; this.onerror=function(){this.outerHTML='<div class=\'logo-placeholder\'>CK</div>';}">
+                        <span class="nombre-sucursal color-rio">RIO 1</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+
+            <!-- 2. RIO 3 -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img src="CK contorno blanco.png" class="store-logo" alt="Rio 3" onerror="this.onerror=null; this.src='CK contorno blanco.jpg'; this.onerror=function(){this.outerHTML='<div class=\'logo-placeholder\'>CK</div>';}">
+                        <span class="nombre-sucursal color-rio">RIO 3</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+
+            <!-- 3. RIO 5 -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img src="CK contorno blanco.png" class="store-logo" alt="Rio 5" onerror="this.onerror=null; this.src='CK contorno blanco.jpg'; this.onerror=function(){this.outerHTML='<div class=\'logo-placeholder\'>CK</div>';}">
+                        <span class="nombre-sucursal color-rio">RIO 5</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+
+            <!-- 4. RIO 6 -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img src="CK contorno blanco.png" class="store-logo" alt="Rio 6" onerror="this.onerror=null; this.src='CK contorno blanco.jpg'; this.onerror=function(){this.outerHTML='<div class=\'logo-placeholder\'>CK</div>';}">
+                        <span class="nombre-sucursal color-rio">RIO 6</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+
+            <!-- 5. AMERICAS -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img src="CK contorno blanco.png" class="store-logo" alt="Americas" onerror="this.onerror=null; this.src='CK contorno blanco.jpg'; this.onerror=function(){this.outerHTML='<div class=\'logo-placeholder\'>CK</div>';}">
+                        <span class="nombre-sucursal color-rio">AMERICAS</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+
+            <!-- 6. MONUMENTAL -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img src="CK contorno blanco.png" class="store-logo" alt="Monumental" onerror="this.onerror=null; this.src='CK contorno blanco.jpg'; this.onerror=function(){this.outerHTML='<div class=\'logo-placeholder\'>CK</div>';}">
+                        <span class="nombre-sucursal color-rio">MONUMENTAL</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+
+            <!-- 7. SAN LORENZO -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img src="CK contorno blanco.png" class="store-logo" alt="San Lorenzo" onerror="this.onerror=null; this.src='CK contorno blanco.jpg'; this.onerror=function(){this.outerHTML='<div class=\'logo-placeholder\'>CK</div>';}">
+                        <span class="nombre-sucursal color-rio">SAN LORENZO</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+
+            <!-- 8. SHOTA -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img src="SHOTA.jpg" class="store-logo" alt="Shota Rio" onerror="this.onerror=null; this.src='SHOTA.png'; this.onerror=function(){this.outerHTML='<div class=\'logo-placeholder\'>SHO</div>';}">
+                        <span class="nombre-sucursal color-shota">SHOTA RIO</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+
+            <!-- 9. PAPIS -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img src="papis.png" class="store-logo" alt="Papis Rio" onerror="this.onerror=null; this.src='papis.jpg'; this.onerror=function(){this.outerHTML='<div class=\'logo-placeholder\' style=\'color:#2563eb;\'>PAPIS</div>';}">
+                        <span class="nombre-sucursal color-papis">PAPIS RIO</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+
+            <!-- 10. TOSKA 1 -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img src="toska rio 1.jpeg" class="store-logo" alt="Toskario 1" 
+                             onerror="this.onerror=null; this.src='toska rio 1.jpg'; 
+                             this.onerror=function(){ this.src='logo toska.jpeg'; 
+                             this.onerror=function(){ this.src='logo toska.jpg'; 
+                             this.onerror=function(){ this.outerHTML='<div class=\'logo-placeholder\'>TOS 1</div>'; }; }; };">
+                        <span class="nombre-sucursal color-rosa">TOSKARIO 1</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+
+            <!-- 11. TOSKA 2 -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img id="logoToska2" src="logo toska_2.jpeg" class="store-logo" alt="Toskario 2">
+                        <span class="nombre-sucursal color-rosa">TOSKARIO 2</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+
+            <!-- 12. MIEL -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img src="MIEL.png" class="store-logo" alt="Miel Rio" onerror="this.onerror=null; this.src='logo miel.jpg'; this.onerror=function(){this.outerHTML='<div class=\'logo-placeholder\'>MIE</div>';}">
+                        <span class="nombre-sucursal color-rosa">MIEL RIO</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+
+            <!-- 13. COCOS -->
+            <tr>
+                <td>
+                    <div class="store-cell">
+                        <img src="Logo-Cocos.png" class="store-logo" alt="Cocos" onerror="this.onerror=null; this.src='Logo-Cocos.jpg'; this.onerror=function(){this.outerHTML='<div class=\'logo-placeholder\'>COC</div>';}">
+                        <span class="nombre-sucursal color-rosa">COCOS</span>
+                    </div>
+                </td>
+                <td><input type="text" placeholder="Asignar asesor(es)..."></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- SECCIÓN PLAN DE LIMPIEZA AMPLIADA -->
+    <div class="cleaning-section">
+        <div class="cleaning-header">
+            <h3>🧹 PLAN DE LIMPIEZA Y MANTENIMIENTO</h3>
+        </div>
+
+        <div class="cleaning-grid">
+            <div class="cleaning-item">
+                <label>📍 Sucursales Programadas Hoy:</label>
+                <input type="text" placeholder="Ej. Rio 1, Shota, Toska 1...">
+            </div>
+            <div class="cleaning-item">
+                <label>⏰ Horario de Ejecución:</label>
+                <input type="text" value="7:30 AM - 10:00 AM">
+            </div>
+        </div>
+
+        <div class="cleaning-item">
+            <label>📋 Instrucciones y Actividades a Realizar:</label>
+            <textarea class="cleaning-instructions" placeholder="Escribe aquí el desglose de actividades:&#10;1. Limpieza profunda de cristales y exhibidores.&#10;2. Acomodo de inventario en mostradores.&#10;3. Sacudido de racks y barrido/trapeado general..."></textarea>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        Nota: Confirmar llegada y envío de evidencias fotos/video al grupo de WhatsApp al concluir la jornada de limpieza.
+    </div>
+</div>
+
+<script>
+    // Configuración de fecha
+    const hoy = new Date();
+    const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('fechaDia').value = hoy.toLocaleDateString('es-MX', opciones);
+
+    // Evaluador Inteligente de Rutas para Toska 2
+    (function resolverToska2() {
+        const imgToska2 = document.getElementById('logoToska2');
+        const posilbesNombres = [
+            'logo toska_2.jpeg',
+            'toska rio 2.jpg',
+            'toska rio 2.jpeg',
+            'logo toska_2.jpg',
+            'logo toska 2.png',
+            'toskario 2.png'
+        ];
+
+        let index = 0;
+
+        function probarSiguiente() {
+            if (index < posilbesNombres.length) {
+                const tempImg = new Image();
+                tempImg.src = posilbesNombres[index];
+                tempImg.onload = function() {
+                    imgToska2.src = posilbesNombres[index];
+                };
+                tempImg.onerror = function() {
+                    index++;
+                    probarSiguiente();
+                };
+            } else {
+                imgToska2.outerHTML = '<div class="logo-placeholder">TOS 2</div>';
+            }
+        }
+
+        probarSiguiente();
+    })();
+
+    // Función para descargar el cuadro de trabajo como una imagen PNG
+    function descargarComoImagen() {
+        const elemento = document.getElementById('cuadroTrabajo');
+        
+        // Opciones de configuración para una alta calidad de imagen
+        const opciones = {
+            scale: 2, // Aumenta la resolución (HD)
+            useCORS: true, // Captura imágenes externas correctamente
+            allowTaint: true,
+            backgroundColor: "#0f172a"
+        };
+
+        html2canvas(elemento, opciones).then(canvas => {
+            const enlace = document.createElement('a');
+            const fechaStr = new Date().toISOString().slice(0, 10);
+            enlace.download = `Cuadro_de_Trabajo_${fechaStr}.png`;
+            enlace.href = canvas.toDataURL('image/png');
+            enlace.click();
+        });
+    }
+</script>
+
+</body>
+</html>
