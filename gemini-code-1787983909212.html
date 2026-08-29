@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHOTA STORE - Portal de Ventas Anime & Radio</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@600;700&display=swap');
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #080c14;
+            background-image: radial-gradient(#1e1b4b 1.5px, transparent 0);
+            background-size: 28px 28px;
+            color: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* OVERLAY LOGIN DE ACCESO */
+        #loginOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(8, 12, 20, 0.96);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .login-card {
+            background: #0f172a;
+            border: 2px solid #f59e0b;
+            box-shadow: 0 0 35px rgba(245, 158, 11, 0.4);
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-card select, .login-card input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #fff;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .action-bar {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover { transform: translateY(-2px); }
+        .btn-refresh { background: linear-gradient(135deg, #0d9488, #14b8a6); color: white; }
+        .btn-download { background: linear-gradient(135deg, #0284c7, #2563eb); color: white; }
+        .btn-save { background: linear-gradient(135deg, #059669, #10b981); color: white; }
+        .btn-admin { background: linear-gradient(135deg, #d97706, #f59e0b); color: white; }
+        .btn-history { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; }
+        .btn-logout { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: #0f172a;
+            border-radius: 18px;
+            padding: 24px;
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 35px rgba(59, 130, 246, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #1e1b4b, #0f172a);
+            padding: 25px 20px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            border: 2px solid #6366f1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .shota-logo-img {
+            max-width: 280px;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.6);
+            border: 2px solid #f59e0b;
+        }
+
+        .header-text h1 {
+            margin: 0;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            background: linear-gradient(90deg, #38bdf8, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* REPRODUCTOR DE RADIO ONLINE EN VIVO */
+        .radio-player-card {
+            background: linear-gradient(135deg, #1e1b4b, #0f172a);
+            border: 2px solid #a855f7;
+            border-radius: 14px;
+            padding: 14px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            flex-wrap: wrap;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .radio-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .radio-pulse {
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .radio-pulse.active {
+            background-color: #10b981;
+            box-shadow: 0 0 12px #10b981;
+            animation: pulseGlow 1.5s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .radio-controls-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-play-radio {
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+        }
+
+        .btn-play-radio:hover {
+            transform: scale(1.03);
+        }
+
+        /* PANEL DE PUNTOS CONECTADOS SUPERADMIN */
+        .status-panel-superadmin {
+            display: none;
+            background: #1e293b;
+            border: 1px solid #38bdf8;
+            padding: 12px 18px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            margin-left: 6px;
+            font-weight: bold;
+        }
+        .badge-online { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid #22c55e; }
+        .badge-offline { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
+
+        .top10-card {
+            background: linear-gradient(135deg, #1e1b4b, #090d16);
+            border: 2px solid #f59e0b;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 25px;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+        }
+
+        .top10-title {
+            font-family: 'Orbitron', sans-serif;
+            color: #f59e0b;
+            font-size: 1.1rem;
+            margin-top: 0;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .top10-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+        }
+
+        .top10-item {
+            background: #182234;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .top10-item.pos-1 { border-left-color: #f59e0b; background: #2a2004; }
+        .top10-item.pos-2 { border-left-color: #94a3b8; background: #1a2230; }
+        .top10-item.pos-3 { border-left-color: #b45309; background: #26170a; }
+
+        .date-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .date-bar input {
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #38bdf8;
+            font-family: 'Orbitron', sans-serif;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-bottom: 20px; }
+        th { background-color: #1e293b; color: #38bdf8; font-family: 'Orbitron', sans-serif; text-align: left; padding: 12px; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #334155; }
+        td { background: #182234; padding: 10px 12px; vertical-align: middle; }
+        td:first-child { border-radius: 10px 0 0 10px; }
+        td:last-child { border-radius: 0 10px 10px 0; }
+
+        tr.pos-1 td { background: linear-gradient(90deg, #362800, #182234); border-top: 1px solid #f59e0b; border-bottom: 1px solid #f59e0b; }
+        tr.pos-2 td { background: linear-gradient(90deg, #1e293b, #182234); border-top: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8; }
+        tr.pos-3 td { background: linear-gradient(90deg, #2e1808, #182234); border-top: 1px solid #b45309; border-bottom: 1px solid #b45309; }
+
+        .rank-badge { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1rem; width: 32px; text-align: center; display: inline-block; }
+        .store-cell { display: flex; align-items: center; gap: 12px; }
+        .shota-logo-mini { width: 40px; height: 40px; border-radius: 8px; border: 1px solid #f59e0b; object-fit: cover; flex-shrink: 0; }
+        .store-name { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 0.9rem; color: #f8fafc; }
+
+        .input-dark {
+            background: #0f172a; border: 1px solid #334155; color: #f1f5f9; padding: 6px 8px; border-radius: 6px; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 0.85rem; width: 100%;
+        }
+        .input-dark:disabled { background: #090d16; opacity: 0.5; cursor: not-allowed; }
+
+        .progress-container { width: 100%; background-color: #0f172a; border-radius: 8px; height: 20px; overflow: hidden; border: 1px solid #334155; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, #3b82f6, #a855f7, #10b981); width: 0%; transition: width 0.5s ease-in-out; }
+        .pct-text { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 0.85rem; color: #38bdf8; text-align: center; }
+
+        .total-box {
+            background: linear-gradient(135deg, #1e1b4b, #0f172a); border: 2px solid #a855f7; color: white; padding: 16px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; font-family: 'Orbitron', sans-serif;
+        }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.88); z-index: 10000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #0f172a; border: 2px solid #ec4899; padding: 30px; border-radius: 16px; width: 95%; max-width: 1100px; max-height: 90vh; overflow-y: auto;
+        }
+
+        /* ESTILO PARA SUCURSAL/PUNTO CONECTADO */
+        .sucursal-activa td {
+            background: linear-gradient(90deg, rgba(56, 189, 248, 0.25), rgba(168, 85, 247, 0.25)) !important;
+            border-top: 1px solid #38bdf8 !important;
+            border-bottom: 1px solid #38bdf8 !important;
+        }
+
+        .sucursal-activa .store-name {
+            color: #38bdf8 !important;
+            text-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
+        }
+
+        .sucursal-activa .input-dark {
+            border-color: #38bdf8 !important;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+            background: #1e293b;
+        }
+
+        /* ESTILOS CHAT EN VIVO EN TIEMPO REAL */
+        #chatFloatingWidget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 460px;
+            background: #0f172a;
+            border: 2px solid #a855f7;
+            border-radius: 16px;
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.4);
+            display: flex;
+            flex-direction: column;
+            z-index: 999;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        #chatFloatingWidget.collapsed {
+            height: 50px;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #1e1b4b, #3b0764);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #a855f7;
+        }
+
+        .chat-header h3 {
+            margin: 0;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: #f59e0b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #080c14;
+        }
+
+        .chat-msg {
+            background: #182234;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border-left: 3px solid #3b82f6;
+            position: relative;
+            font-size: 0.85rem;
+        }
+
+        .chat-msg.admin-msg {
+            border-left-color: #f59e0b;
+            background: #2a2004;
+        }
+
+        .chat-msg .msg-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 4px;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .chat-msg .msg-user {
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        .chat-msg.admin-msg .msg-user {
+            color: #f59e0b;
+        }
+
+        .chat-msg .msg-text {
+            color: #f8fafc;
+            word-break: break-word;
+        }
+
+        .btn-delete-msg {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0 4px;
+            float: right;
+        }
+
+        .chat-footer {
+            padding: 10px;
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            display: flex;
+            gap: 6px;
+        }
+
+        .chat-footer input {
+            flex: 1;
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .chat-footer button {
+            background: #a855f7;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+        }
+
+        /* ESTILOS PARA CATÁLOGO Y TUTORIALES */
+        .tabs-header { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        .tab-btn { background: #1e293b; color: #94a3b8; border: 1px solid #475569; padding: 10px 20px; border-radius: 8px 8px 0 0; cursor: pointer; font-family: 'Orbitron', sans-serif; font-weight: bold; transition: all 0.3s; }
+        .tab-btn.active { background: linear-gradient(135deg, #059669, #10b981); color: white; border-color: #10b981; }
+        
+        .catalogo-search { width: 100%; padding: 12px; background: #1e293b; border: 2px solid #3b82f6; color: #fff; border-radius: 8px; font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; margin-bottom: 15px; }
+        
+        .tutorial-card { background: linear-gradient(135deg, #1e1b4b, #0f172a); border-left: 4px solid #a855f7; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 0 10px rgba(168, 85, 247, 0.2); }
+        .tutorial-card h3 { margin: 0 0 8px 0; color: #38bdf8; font-family: 'Orbitron', sans-serif; }
+        .tutorial-card p { margin: 0; color: #cbd5e1; font-size: 0.95rem; line-height: 1.4; }
+        .tutorial-card ul { margin: 10px 0 0 0; color: #cbd5e1; padding-left: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="loginOverlay">
+    <div class="login-card">
+        <img src="logo shota.jpeg" style="width: 180px; margin-bottom: 15px; border-radius: 8px;" alt="Shota Logo">
+        <h2 style="font-family: 'Orbitron'; color: #f59e0b; margin: 0 0 15px 0;">PORTAL DE ACCESO</h2>
+        
+        <label style="font-size: 0.8rem; color: #94a3b8;">SELECCIONA TU ROL / PUNTO DE VENTA:</label>
+        <select id="userTypeSelect">
+            <optgroup label="Administración">
+                <option value="SUPERADMIN">👑 SUPER ADMINISTRADOR</option>
+                <option value="SUBADMIN">⭐ SUB-ADMINISTRADOR</option>
+            </optgroup>
+            <optgroup label="Sucursales" id="sucursalOptions"></optgroup>
+        </select>
+
+        <input type="password" id="userPassInput" placeholder="Contraseña de acceso...">
+        <button class="btn btn-admin" style="width:100%; justify-content:center; margin-top:10px;" onclick="autenticarUsuario()">
+            🚀 INGRESAR AL SISTEMA
+        </button>
+    </div>
+</div>
+
+<div class="action-bar">
+    <div>
+        <span id="sessionBadge" style="font-family:'Orbitron'; font-size:0.85rem; color:#f59e0b; margin-right: 15px;"></span>
+        <button class="btn btn-logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</button>
+    </div>
+    <div>
+        <button class="btn btn-refresh" onclick="recargarDatosNube()">🔄 Actualizar Datos</button>
+        <button class="btn btn-save" onclick="abrirModalHerramientas()">📚 Catálogo y Tutoriales</button>
+        <button class="btn btn-history" id="btnHistory" style="display:none;" onclick="abrirHistórico()">📊 Histórico de Ventas</button>
+        <button class="btn btn-admin" id="btnAdminPanel" style="display:none;" onclick="abrirPanelAdmin()">⚙️ Gestión Passwords</button>
+        <button class="btn btn-download" onclick="descargarComoImagen()">📸 Captura PNG</button>
+    </div>
+</div>
+
+<div class="container" id="carreraVentas">
+    <div class="header">
+        <img src="logo shota.jpeg" class="shota-logo-img" alt="Shota Store Logo">
+        <div class="header-text">
+            <h1>⛩️ TORNEO DE VENTAS SHOTA STORE ⛩️</h1>
+        </div>
+    </div>
+
+    <!-- REPRODUCTOR DE RADIO ONLINE EN VIVO -->
+    <div class="radio-player-card">
+        <div class="radio-title-group">
+            <span id="radioLed" class="radio-pulse"></span>
+            <span style="font-family:'Orbitron'; font-weight:800; color:#a855f7; font-size:0.9rem;">📻 RADIO SHOTA ONLINE:</span>
+            <select id="selectRadioStation" style="background:#1e293b; color:#fff; border:1px solid #475569; padding:6px 10px; border-radius:6px; font-family:'Orbitron'; font-size:0.8rem;" onchange="cambiarEstacionRadio()"></select>
+        </div>
+        <div class="radio-controls-group">
+            <button class="btn-play-radio" onclick="toggleRadioPlay()">
+                <span id="radioPlayIcon">▶</span> <span id="radioPlayText">Escuchar</span>
+            </button>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:0.8rem; color:#94a3b8;">🔊</span>
+                <input type="range" id="radioVolume" min="0" max="1" step="0.05" value="0.8" style="width: 80px;" oninput="cambiarVolumenRadio(this.value)">
+            </div>
+        </div>
+    </div>
+    <audio id="audioStreamPlayer" style="display:none;"></audio>
+
+    <!-- PANEL DE MONITOREO EN TIEMPO REAL PARA SUPERADMIN -->
+    <div id="statusPanelSuperAdmin" class="status-panel-superadmin">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="color:#f59e0b; font-weight:bold;">📡 ESTADO DE PUNTOS DE VENTA EN TIEMPO REAL:</span>
+            <span><b id="countConectados" style="color:#22c55e;">0</b> / <span id="countTotal">0</span> Conectados</span>
+        </div>
+        <div id="listaEstadoConexiones" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+    </div>
+
+    <div class="top10-card">
+        <div class="top10-title">
+            <span>🏆 TOP 10 DE VENTAS - DÍA ANTERIOR (<span id="fechaDiaAnterior">--</span>)</span>
+        </div>
+        <div class="top10-grid" id="contenedorTop10">
+            <div style="color:#94a3b8;">Cargando Top 10...</div>
+        </div>
+    </div>
+
+    <div class="date-bar">
+        <div>
+            <label style="font-family: 'Orbitron'; font-size: 0.8rem; color: #94a3b8;">📅 FECHA EN CURSO:</label>
+            <input type="date" id="fechaRegistro" onchange="cargarDatosFecha()">
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 6%; text-align: center;">POS</th>
+                <th style="width: 32%;">Punto de Venta / Asesores</th>
+                <th style="width: 17%;">Meta Día ($)</th>
+                <th style="width: 17%;">Venta Real ($)</th>
+                <th style="width: 20%;">Progreso Carrera</th>
+                <th style="width: 8%; text-align: center;">%</th>
+            </tr>
+        </thead>
+        <tbody id="tablaSucursales"></tbody>
+    </table>
+
+    <div class="total-box">
+        <span>⚡ ACUMULADO GENERAL DIARIO:</span>
+        <span class="amount" id="granTotal">🔒 OCULTO</span>
+    </div>
+</div>
+
+<!-- CHAT EN VIVO EN TIEMPO REAL -->
+<div id="chatFloatingWidget" class="collapsed">
+    <div class="chat-header" onclick="toggleChat()">
+        <h3>💬 CHAT EN VIVO SHOTA <span id="chatBadge" style="background:#a855f7; color:#fff; padding:2px 6px; border-radius:10px; font-size:0.75rem;">0</span></h3>
+        <span id="chatToggleIcon" style="color:#f59e0b;">▲</span>
+    </div>
+    <div class="chat-body" id="chatMessages"></div>
+    <div class="chat-footer">
+        <input type="text" id="chatInput" placeholder="Escribe un mensaje motivacional..." onkeypress="handleChatKeyPress(event)">
+        <button onclick="enviarMensajeChat()">Enviar</button>
+    </div>
+</div>
+
+<!-- MODALES AMPLIADOS -->
+<div class="modal" id="modalHistorico">
+    <div class="modal-content">
+        <h2 style="font-family:'Orbitron'; color:#ec4899; margin-top:0;">📊 HISTORIAL DE VENTAS GENERAL POR PUNTO DE VENTA</h2>
+        <p style="font-size:0.9rem; color:#94a3b8;">Sistemas de consulta ampliado exclusivo para SuperAdministración y SubAdministración.</p>
+        <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center;">
+            <label style="font-family:'Orbitron'; font-size:0.85rem;">SELECCIONAR MES:</label>
+            <input type="month" id="filtroMes" style="background:#1e293b; color:#fff; border:1px solid #475569; padding:8px 12px; border-radius:6px; font-family:'Orbitron';" onchange="cargarHistóricoMes()">
+        </div>
+        <div id="contenidoHistorico" style="margin-top:15px;">Cargando historial...</div>
+        <button class="btn btn-logout" style="margin-top:20px;" onclick="cerrarModal('modalHistorico')">Cerrar Histórico</button>
+    </div>
+</div>
+
+<div class="modal" id="modalAdmin">
+    <div class="modal-content" style="border-color:#f59e0b; max-width: 750px;">
+        <h2 style="font-family:'Orbitron'; color:#f59e0b; margin-top:0;">⚙️ GESTIÓN Y CONFIGURACIÓN GENERAL</h2>
+        
+        <h3>🔐 Cambiar Contraseña de Sucursal</h3>
+        <select id="selSucursalPass" style="width:100%; padding:8px; background:#1e293b; color:#fff; font-family:'Rajdhani'; font-size:0.9rem;"></select>
+        <input type="password" id="newPassSucursal" placeholder="Nueva Contraseña..." style="width:100%; padding:8px; margin-top:8px; background:#1e293b; color:#fff; font-family:'Rajdhani'; font-size:0.9rem;">
+        <button class="btn btn-save" style="margin-top:8px;" onclick="guardarPasswordSucursal()">Actualizar Password</button>
+
+        <hr style="border-color:#334155; margin:20px 0;">
+
+        <h3>📻 Configuración de Estaciones de Radio Online</h3>
+        <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:10px;">Agrega o actualiza enlaces de audio en vivo (.mp3, streaming directo):</p>
+        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <input type="text" id="nuevaRadioNombre" placeholder="Nombre Estación (Ej: Switch 105.9 FM)" style="flex:1; min-width:180px; padding:8px; background:#1e293b; color:#fff; font-family:'Rajdhani'; font-size:0.9rem;">
+            <input type="text" id="nuevaRadioURL" placeholder="URL Stream (https://...)" style="flex:2; min-width:220px; padding:8px; background:#1e293b; color:#fff; font-family:'Rajdhani'; font-size:0.9rem;">
+            <button class="btn btn-save" onclick="agregarEstacionRadioAdmin()">➕ Agregar Radio</button>
+        </div>
+        <div id="contenedorListaRadioAdmin" style="margin-bottom:20px;"></div>
+
+        <hr style="border-color:#334155; margin:20px 0;">
+
+        <h3>⭐ Claves Sub-Administradores</h3>
+        <input type="text" id="newSubAdminPass" placeholder="Nueva Clave Sub-Admin..." style="width:100%; padding:8px; background:#1e293b; color:#fff; font-family:'Rajdhani'; font-size:0.9rem;">
+        <button class="btn btn-admin" style="margin-top:8px;" onclick="agregarSubAdmin()">Agregar SubAdmin</button>
+        <div id="listaSubAdmins" style="margin-top:15px;"></div>
+
+        <button class="btn btn-logout" style="margin-top:20px;" onclick="cerrarModal('modalAdmin')">Cerrar</button>
+    </div>
+</div>
+
+<!-- NUEVO MODAL DE HERRAMIENTAS (CATÁLOGO Y TUTORIALES) -->
+<div class="modal" id="modalHerramientas">
+    <div class="modal-content" style="border-color:#10b981; max-width: 900px;">
+        <h2 style="font-family:'Orbitron'; color:#10b981; margin-top:0;">📚 HERRAMIENTAS PARA ASESORES</h2>
+        
+        <div class="tabs-header">
+            <button class="tab-btn active" id="btnTabCatalogo" onclick="cambiarTab('catalogo')">🔍 Catálogo de Códigos</button>
+            <button class="tab-btn" id="btnTabTutoriales" onclick="cambiarTab('tutoriales')">🎓 Capacitación y Tutoriales</button>
+        </div>
+
+        <!-- PESTAÑA CATÁLOGO -->
+        <div id="tabCatalogoView">
+            <input type="text" id="buscadorCatalogo" class="catalogo-search" onkeyup="filtrarCatalogo()" placeholder="🔍 Buscar por código o descripción del artículo...">
+            
+            <!-- Controles exclusivos para Administradores -->
+            <div id="adminCatalogoControls" style="display:none; background:#1e293b; padding:15px; border-radius:8px; margin-bottom:15px; border:1px solid #f59e0b;">
+                <h4 style="margin-top:0; color:#f59e0b;">⚙️ Agregar Nuevo Artículo</h4>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <input type="text" id="nuevoCodigo" placeholder="Código..." class="input-dark" style="flex:1; min-width:120px;">
+                    <input type="text" id="nuevaDesc" placeholder="Descripción del producto..." class="input-dark" style="flex:3; min-width:200px;">
+                    <input type="number" id="nuevoPrecio" placeholder="Precio $" class="input-dark" style="flex:1; min-width:100px;">
+                    <button class="btn btn-save" onclick="agregarItemCatalogo()">➕ Agregar</button>
+                </div>
+            </div>
+
+            <table style="font-size: 0.9rem;">
+                <thead>
+                    <tr>
+                        <th style="width:20%">Código</th>
+                        <th style="width:55%">Descripción</th>
+                        <th style="width:15%">Precio</th>
+                        <th style="width:10%" id="columnaAccionesCat">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCatalogoBody">
+                    <!-- Se llena por Firebase -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PESTAÑA TUTORIALES -->
+        <div id="tabTutorialesView" style="display:none;">
+            <div class="tutorial-card">
+                <h3>👔 Tu imagen es tu carta de presentación</h3>
+                <p>Para asegurar una atención estelar en sucursal, todo asesor debe cumplir con los siguientes 6 puntos fundamentales:</p>
+                <ul>
+                    <li><b>Postura:</b> Mantenerse siempre erguido y proactivo.</li>
+                    <li><b>Sonrisa:</b> Saludar al cliente con amabilidad.</li>
+                    <li><b>Uniforme:</b> Portarlo completo, limpio y visible en todo momento.</li>
+                    <li><b>Enfoque al cliente:</b> Contacto visual y atención ininterrumpida.</li>
+                    <li><b>Manos visibles:</b> Evitar tener las manos en los bolsillos o cruzadas.</li>
+                    <li><b>Asentir:</b> Confirmar con la cabeza mientras el cliente expresa su necesidad.</li>
+                </ul>
+            </div>
+
+            <div class="tutorial-card">
+                <h3>🚫 Prohibido Procrastinar</h3>
+                <p><b>Política de piso de ventas:</b> El uso del celular personal está estrictamente prohibido mientras te encuentres en atención directa al cliente o en horario de alta afluencia. Las distracciones en el dispositivo móvil generan una mala experiencia de compra e impactan directamente en las metas diarias.</p>
+            </div>
+        </div>
+
+        <button class="btn btn-logout" style="margin-top:20px;" onclick="cerrarModal('modalHerramientas')">Cerrar Ventana</button>
+    </div>
+</div>
+
+<script>
+    const SUPERADMIN_PASS = "SUPER123";
+    let subAdminsList = ["SUB123"];
+
+    let usuarioActual = null;
+    let rolActual = null;
+    let puntosConectadosMap = {};
+
+    let estacionesRadio = [
+        { nombre: "Switch 105.9 FM / Romance (Cd. Juárez)", url: "https://stream.zeno.fm/f3v4827828quv" },
+        { nombre: "Exa FM (Pop En Vivo)", url: "https://stream.zeno.fm/65842828quv" }
+    ];
+
+    let passwordsSucursales = {
+        "SHOTA ALAMEDA 1": "shota123", "SHOTA ALAMEDA 2": "shota123",
+        "SHOTA CUESTA": "shota123", "SHOTA GALERÍAS": "shota123",
+        "SHOTA JILOTEPEC": "shota123", "SHOTA LIBRAMIENTO": "shota123",
+        "SHOTA MISIONES": "shota123", "SHOTA PLAZA JUÁREZ 1": "shota123",
+        "SHOTA PLAZA JUÁREZ 2": "shota123", "SHOTA RÍO": "shota123",
+        "SHOTA SENDERO": "shota123", "SHOTA TALAMAS 1": "shota123",
+        "SHOTA TALAMAS 2": "shota123", "SHOTA TORRES 1": "shota123",
+        "SHOTA TORRES 2": "shota123", "SHOTA TORRES 3": "shota123"
+    };
+
+    const listaSucursalesOriginal = Object.keys(passwordsSucursales);
+    let estadoSucursales = [];
+
+    function resetearEstadoLocal() {
+        estadoSucursales = listaSucursalesOriginal.map(nombre => ({
+            nombre: nombre, meta: 10000, venta: 0, asesores: ''
+        }));
+    }
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyC6Tjj7Hqi9zQ2NOzg2_nWWvR3lmAV4CoA",
+        authDomain: "shotastore-portal.firebaseapp.com",
+        databaseURL: "https://shotastore-portal-default-rtdb.firebaseio.com",
+        projectId: "shotastore-portal",
+        storageBucket: "shotastore-portal.appspot.com",
+        messagingSenderId: "10598283828",
+        appId: "1:10598283828:web:abcdef123456"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Inicialización básica del sistema de login y fechas al cargar la página
+    window.onload = function() {
+        resetearEstadoLocal();
+        const selectSuc = document.getElementById('sucursalOptions');
+        if (selectSuc) {
+            selectSuc.innerHTML = listaSucursalesOriginal.map(s => `<option value="${s}">${s}</option>`).join('');
+        }
+        const today = new Date().toISOString().split('T')[0];
+        const fechaInput = document.getElementById('fechaRegistro');
+        if (fechaInput) fechaInput.value = today;
+    };
+
+    function autenticarUsuario() {
+        const tipo = document.getElementById('userTypeSelect').value;
+        const pass = document.getElementById('userPassInput').value;
+
+        if (tipo === 'SUPERADMIN' && pass === SUPERADMIN_PASS) {
+            usuarioActual = "SuperAdministrador";
+            rolActual = "SUPERADMIN";
+        } else if (tipo === 'SUBADMIN' && subAdminsList.includes(pass)) {
+            usuarioActual = "SubAdministrador";
+            rolActual = "SUBADMIN";
+        } else if (passwordsSucursales[tipo] && passwordsSucursales[tipo] === pass) {
+            usuarioActual = tipo;
+            rolActual = "SUCURSAL";
+        } else {
+            alert("Contraseña incorrecta o acceso no autorizado.");
+            return;
+        }
+
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('sessionBadge').innerText = `👤 Sesión: ${usuarioActual}`;
+        
+        if (rolActual === 'SUPERADMIN' || rolActual === 'SUBADMIN') {
+            document.getElementById('btnHistory').style.display = 'inline-flex';
+            document.getElementById('btnAdminPanel').style.display = 'inline-flex';
+        }
+        if (rolActual === 'SUPERADMIN') {
+            document.getElementById('statusPanelSuperAdmin').style.display = 'block';
+        }
+    }
+
+    function cerrarSesion() {
+        location.reload();
+    }
+
+    function recargarDatosNube() {
+        alert("Sincronizando datos con la nube...");
+    }
+
+    function abrirModalHerramientas() {
+        document.getElementById('modalHerramientas').style.display = 'flex';
+    }
+
+    function abrirHistórico() {
+        document.getElementById('modalHistorico').style.display = 'flex';
+    }
+
+    function abrirPanelAdmin() {
+        document.getElementById('modalAdmin').style.display = 'flex';
+    }
+
+    function cerrarModal(idModal) {
+        document.getElementById(idModal).style.display = 'none';
+    }
+
+    function descargarComoImagen() {
+        html2canvas(document.getElementById('carreraVentas')).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'torneo-ventas-shota.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    }
+
+    function cambiarTab(tab) {
+        if (tab === 'catalogo') {
+            document.getElementById('tabCatalogoView').style.display = 'block';
+            document.getElementById('tabTutorialesView').style.display = 'none';
+            document.getElementById('btnTabCatalogo').className = 'tab-btn active';
+            document.getElementById('btnTabTutoriales').className = 'tab-btn';
+        } else {
+            document.getElementById('tabCatalogoView').style.display = 'none';
+            document.getElementById('tabTutorialesView').style.display = 'block';
+            document.getElementById('btnTabCatalogo').className = 'tab-btn';
+            document.getElementById('btnTabTutoriales').className = 'tab-btn active';
+        }
+    }
+
+    function toggleChat() {
+        const widget = document.getElementById('chatFloatingWidget');
+        widget.classList.toggle('collapsed');
+        document.getElementById('chatToggleIcon').innerText = widget.classList.contains('collapsed') ? '▲' : '▼';
+    }
+</script>
+
+</body>
+</html>
